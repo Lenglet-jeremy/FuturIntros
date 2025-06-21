@@ -1,0 +1,29 @@
+<div id="UserEmailVerifyContainer" class="UserEmailVerifyContainer">
+  <div id="UserEmailVerifyBox" class="UserEmailVerifyBox">
+    <div id="UserEmailVerifyTitle" class="UserEmailVerifyTitle">
+      <h2>Vérifiez votre adresse e-mail</h2>
+    </div>
+
+    <p class="UserEmailVerifyInstruction">
+      Un code de confirmation à 6&nbsp;chiffres vient d'être envoyé à votre adresse e-mail.
+      Veuillez le saisir ci-dessous pour confirmer votre compte.
+    </p>
+
+    <form id="EmailVerificationForm" class="LoginForm">
+      <input
+        type="text"
+        id="verificationCode"
+        placeholder="Code à 6 chiffres"
+        maxlength="6"
+        pattern="\d{6}"
+        required
+      />
+      <button type="submit">Valider</button>
+    </form>
+
+    <p class="UserEmailVerifyResend">
+      Vous n'avez pas reçu le code&nbsp;?
+      <a href="#" id="resendCodeLink">Renvoyer le code</a>
+    </p>
+  </div>
+</div>

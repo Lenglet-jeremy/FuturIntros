@@ -1,0 +1,27 @@
+.password-field-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-requirements {
+    position: absolute;
+
+    background-color: #000000;
+    color: #d4eeff;
+
+    flex-direction: column;
+    top: calc(100% + 4px); /* Affiche par-dessus */
+    left: 0;
+
+    border: 1px solid #ccc;
+    border-radius: 8px;
+
+    padding: 8px 12px;
+    width: max-content;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+
+
+

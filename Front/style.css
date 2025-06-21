@@ -1,0 +1,24 @@
+/* style.css */
+
+:root{
+    --backgroundColor : #000000;
+    --color : #FFFFFF;
+}
+
+*{
+    margin: 0;
+    padding: 0;
+}
+
+
+body{
+    background-color: var(--backgroundColor);
+    color: #d5ecff;
+    width: 100vw;
+    height: 100vh;
+}
+
+.BodyContent{
+    width: 100%;
+    height: 100%;
+}
