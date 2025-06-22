@@ -19,7 +19,7 @@ export async function loadUserAccountPage() {
     const emailSpan = document.getElementById("UserAccountEmail");
 
     if (res.ok) {
-      if (nameSpan)  nameSpan.textContent  = data.name  ?? "Non renseigné";
+      if (nameSpan)  nameSpan.textContent  = data.name ?? "Non renseigné";
       if (emailSpan) emailSpan.textContent = data.email;
     } else {
       document.getElementById("UserAccountContainer").innerHTML =

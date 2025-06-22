@@ -1,155 +1,174 @@
-// server.js
+require('dotenv').config();
 
-const User = require('./Models/User');
-
-
+const express = require('express');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
-const express = require('express');
 const bcrypt = require('bcrypt');
 const path = require('path');
+const cors = require('cors');
 
+const User = require('./Models/User');
 const { sendVerificationCodeOnMail } = require('./Utils/Mailer.js');
 
-const authenticate = (req, res, next) => {
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Connexion à MongoDB
+mongoose.connect(process.env.MONGO_URI, process.env.MONGO_OPTIONS)
+  .then(() => console.log("MongoDB connecté"))
+  .catch(err => console.error("Erreur MongoDB :", err));
+
+// Middleware
+app.use(cors({ origin: true, credentials: true })); // CORS pour toutes origines
+app.use(express.json()); // Parse les corps JSON
+app.use(express.static(path.join(__dirname, '../Front'))); // Fichiers statiques
+
+// Auth middleware
+const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: 'Token manquant' });
 
   const token = authHeader.split(' ')[1];
-  jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-    if (err) return res.status(401).json({ error: 'Token invalide' });
-
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
 
     req.user = user;
     next();
-  });
+  } catch (err) {
+    return res.status(401).json({ error: 'Token invalide' });
+  }
 };
-
-require('dotenv').config();
-
-const app = express();
-const PORT = process.env.PORT;
-
-mongoose.connect(process.env.MONGO_URI, process.env.MONGO_OPTIONS)
-.then(() => console.log("MongoDB connecté"))
-.catch(err => console.error(err));
-
-
-app.use(express.json());
-
-// Sert les fichiers statiques comme script.js et style.css
-app.use(express.static(path.join(__dirname, '../Front')));
-
-app.listen(PORT, () => 
-  console.log(`Serveur démarré sur http://localhost:${PORT}`)
-);
-
 
 // Inscription
 app.post('/register', async (req, res) => {
-  const { email, password, name } = req.body;
-  
-  const existing = await User.findOne({ email });
-  if (existing) return res.status(400).json({ error: 'Utilisateur déjà existant' });
+  try {
+    const { email, password, name } = req.body;
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const code = Math.floor(100000 + Math.random() * 900000).toString(); // code 6 chiffres
-  const expiration = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ error: 'Utilisateur déjà existant' });
 
-  const emailSent = await sendVerificationCodeOnMail({ email, code });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiration = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
-  if (!emailSent) {
-    return res.status(500).json({ error: "Erreur lors de l'envoi de l'e-mail" });
+    const emailSent = await sendVerificationCodeOnMail({ email, code });
+
+    if (!emailSent) {
+      return res.status(500).json({ error: "Erreur lors de l'envoi de l'e-mail" });
+    }
+
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      verificationCode: code,
+      codeExpiration: expiration
+    });
+
+    await user.save();
+    res.status(201).json({ message: 'Utilisateur enregistré. Vérifie ton e-mail.' });
+  } catch (error) {
+    console.error("Erreur d'inscription :", error);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
   }
-
-  const user = new User({
-    name,
-    email,
-    password: hashedPassword,
-    verificationCode: code,
-    codeExpiration: expiration
-  });
-
-  await user.save();
-
-  res.status(201).json({ message: 'Utilisateur enregistré. Vérifie ton e-mail.' });
 });
 
+// Vérification d'email
 app.post('/verify-email', async (req, res) => {
-  const { email, code } = req.body;
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) return res.status(400).json({ error: 'Email ou code manquant.' });
 
-  if (!email || !code) return res.status(400).json({ error: 'Email ou code manquant.' });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé.' });
+    if (user.isVerified) return res.status(400).json({ error: 'Adresse déjà vérifiée.' });
 
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé.' });
+    if (user.verificationCode !== code || !user.codeExpiration || user.codeExpiration < new Date()) {
+      return res.status(400).json({ error: 'Code invalide ou expiré.' });
+    }
 
-  if (user.isVerified) return res.status(400).json({ error: 'Adresse déjà vérifiée.' });
+    user.isVerified = true;
+    user.verificationCode = undefined;
+    user.codeExpiration = undefined;
+    await user.save();
 
-  if (
-    user.verificationCode !== code ||
-    !user.codeExpiration ||
-    user.codeExpiration < new Date()
-  ) {
-    return res.status(400).json({ error: 'Code invalide ou expiré.' });
+    res.json({ message: 'Adresse e-mail vérifiée avec succès.' });
+  } catch (error) {
+    console.error("Erreur de vérification :", error);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
   }
-
-  user.isVerified = true;
-  user.verificationCode = undefined;
-  user.codeExpiration = undefined;
-  await user.save();
-
-  res.json({ message: 'Adresse e-mail vérifiée avec succès.' });
 });
 
+// Réenvoi du code
 app.post('/resend-verification-code', async (req, res) => {
-  const { email } = req.body;
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email requis.' });
 
-  if (!email) return res.status(400).json({ error: 'Email requis.' });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
+    if (user.isVerified) return res.status(400).json({ error: 'Adresse déjà vérifiée.' });
 
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ error: 'Utilisateur introuvable.' });
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiration = new Date(Date.now() + 10 * 60 * 1000);
 
-  if (user.isVerified) return res.status(400).json({ error: 'Adresse déjà vérifiée.' });
+    const emailSent = await sendVerificationCodeOnMail({ email, code });
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiration = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    if (!emailSent) {
+      return res.status(500).json({ error: "Erreur lors de l'envoi de l'e-mail." });
+    }
 
-  const emailSent = await sendVerificationCodeOnMail({ email, code });
+    user.verificationCode = code;
+    user.codeExpiration = expiration;
+    await user.save();
 
-  if (!emailSent) {
-    return res.status(500).json({ error: "Erreur lors de l'envoi de l'e-mail." });
+    res.json({ message: 'Nouveau code envoyé.' });
+  } catch (error) {
+    console.error("Erreur de renvoi de code :", error);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
   }
-
-  user.verificationCode = code;
-  user.codeExpiration = expiration;
-  await user.save();
-
-  res.json({ message: 'Nouveau code envoyé.' });
 });
 
 // Connexion
 app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) return res.status(400).json({ error: 'Utilisateur introuvable' });
+  try {
+    const { email, password } = req.body;
 
-  if (!user.isVerified) return res.status(401).json({ error: "Adresse e-mail non vérifiée." });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: 'Utilisateur introuvable' });
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ error: 'Mot de passe incorrect' });
+    if (!user.isVerified) return res.status(401).json({ error: "Adresse e-mail non vérifiée." });
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token, email: user.email });
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ error: 'Mot de passe incorrect' });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token, email: user.email });
+  } catch (error) {
+    console.error("Erreur lors de la connexion :", error);
+    res.status(500).json({ error: 'Erreur serveur lors de la connexion' });
+  }
 });
 
+// Infos utilisateur connecté
 app.get('/api/me', authenticate, (req, res) => {
   res.json({ email: req.user.email, name: req.user.name });
 });
 
-// Fallback pour les routes SPA (sans extension)
-// Toujours en Dernier 
+// Fallback SPA (React, Vue, etc.)
 app.get(/^\/(?!.*\.).*$/, (req, res) => {
-    res.sendFile(path.join(__dirname, '../Front/index.html'));
+  res.sendFile(path.join(__dirname, '../Front/index.html'));
+});
+
+// Middleware global pour erreurs non gérées
+app.use((err, req, res, next) => {
+  console.error("Erreur non gérée :", err);
+  res.status(500).json({ error: 'Erreur interne du serveur' });
+});
+
+// Lancement du serveur
+app.listen(PORT, () => {
+  console.log(`Serveur démarré sur http://localhost:${PORT}`);
 });
