@@ -30,10 +30,6 @@ export async function handleMainPageRoutes(path) {
         
         const accountName = document.getElementById('AccountName');
 
-        if (!token && accountName) {
-            accountName.textContent = "Compte";
-        }
-
         if (token && accountName) {
             try {
                 const res = await fetch('/api/me', {
@@ -50,6 +46,10 @@ export async function handleMainPageRoutes(path) {
             } catch (err) {
                 console.warn("Erreur lors de la récupération du compte:", err);
             }
+        }
+
+        else if (!token && accountName) {
+            accountName.textContent = "Compte";
         }
 
         handleBurgerMenu();
