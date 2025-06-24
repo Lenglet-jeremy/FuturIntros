@@ -25,32 +25,42 @@ export async function handleMainPageRoutes(path) {
 
         // ✅ Mise à jour du nom utilisateur
         const token = localStorage.getItem('token');
-        console.log(token);
-        
-        
         const accountName = document.getElementById('AccountName');
 
         if (token && accountName) {
             try {
-                const res = await fetch('/api/me', {
+                const res = await fetch('/me', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
+
                 const data = await res.json();
                 console.log(data);
-                
-                if (res.ok) {
-                    accountName.textContent = data.name ?? data.email;
+
+                if (!res.ok || data.error === "Token invalide") {
+                    localStorage.removeItem('token');
+                    accountName.textContent = "Compte";
+                    history.pushState(null, null, "/login");
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                    return;
                 }
+
+                // ✅ Affiche nom ou email
+                accountName.textContent = data.name ?? data.email;
+
             } catch (err) {
                 console.warn("Erreur lors de la récupération du compte:", err);
+                localStorage.removeItem('token');
+                accountName.textContent = "Compte";
+                history.pushState(null, null, "/login");
+                window.dispatchEvent(new PopStateEvent('popstate'));
+                return;
             }
-        }
-
-        else if (!token && accountName) {
+        } else if (!token && accountName) {
             accountName.textContent = "Compte";
         }
+
 
         handleBurgerMenu();
         await loadPageContent(path);

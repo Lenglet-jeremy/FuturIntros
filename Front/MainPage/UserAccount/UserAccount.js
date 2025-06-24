@@ -10,7 +10,7 @@ export async function loadUserAccountPage() {
   }
 
   try {
-    const res = await fetch("/api/me", {
+    const res = await fetch("/me", {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
