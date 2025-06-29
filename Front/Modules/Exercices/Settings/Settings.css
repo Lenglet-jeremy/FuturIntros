@@ -6,7 +6,7 @@
     justify-content: space-between;
   }
 
-  .physicalActivitySettingsExerciseSelector {
+  .PhysicalActivitySettingsExerciseSelector {
     padding: 6px;
     background-color: #2a2a2a;
     color: white;
@@ -45,7 +45,7 @@
       margin: 0;
     }
 
-    #physicalActivitySettingsExerciseSelector,
+    #PhysicalActivitySettingsExerciseSelector,
     #physicalActivitySettingsNomenclatureName {
       width: 100%;
       font-size: 14px;

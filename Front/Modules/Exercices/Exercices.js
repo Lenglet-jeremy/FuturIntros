@@ -1,3 +1,5 @@
+import { setSettingBehavior } from "./Settings/Settings.js";
+
 // Exercices.js
 export function setExercicesContentTabSelection() {
     const btns = document.querySelectorAll('.ExercicesContentTabsBar .TabBtn');
@@ -9,7 +11,6 @@ export function setExercicesContentTabSelection() {
 
     const availableTabs = ['Settings', 'Entrys', 'Handlings'];
     const selectedTab = availableTabs.includes(tabFromUrl) ? tabFromUrl : 'Entrys';
-    console.log(selectedTab);
 
     
 
@@ -25,6 +26,13 @@ export function setExercicesContentTabSelection() {
             })
             .then(html => {
                 contentArea.innerHTML = html;
+                
+                if (tabFromUrl === "Settings") {
+                    console.log("dfg");
+                    
+                    
+                    setSettingBehavior();
+                }
             })
             .catch(err => {
                 console.error(err);

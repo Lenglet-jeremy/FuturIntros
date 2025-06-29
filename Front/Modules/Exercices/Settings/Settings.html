@@ -2,7 +2,7 @@
     <div id="physicalActivitySettingsInner" class="physicalActivitySettingsInner">
         <div class="physicalActivitySettingsHeader">
             <h2>Type d'exercice</h2>
-            <select id="physicalActivitySettingsExerciseSelector" class="physicalActivitySettingsExerciseSelector">
+            <select id="PhysicalActivitySettingsExerciseSelector" class="PhysicalActivitySettingsExerciseSelector">
                 <option value="">-- Choisir un exercice --</option>
 
                 <optgroup label="🏃 Cardio">
@@ -136,54 +136,33 @@
         <table id="TablephysicalActivitySettings" class="TablephysicalActivitySettings">
             <thead>
                 <tr>
-                    <th>Exercice</th>
-                    <th>Durée</th>
-                    <th>Charge</th>
-                    <th>Reps</th>
-                    <th>Inclinaison</th>
-                    <th></th>
+                    <!-- 
+                    <th>...</th>
+                    <th>...</th>
+                    <th>...</th>
+                    -->
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td><input type="text" value="Tapis"></td>
-                    <td><input type="text" value="15 min"></td>
-                    <td><input type="text" value=""></td>
-                    <td><input type="text" value=""></td>
-                    <td><input type="text" value="4°"></td>
-                    <td class="physicalActivitySettingsDelete">X</td>
-                </tr>
-                <tr>
-                    <td><input type="text" value="Tapis"></td>
-                    <td><input type="text" value="15 min"></td>
-                    <td><input type="text" value=""></td>
-                    <td><input type="text" value=""></td>
-                    <td><input type="text" value="5°"></td>
-                    <td class="physicalActivitySettingsDelete">X</td>
-                </tr>
-                <tr>
-                    <td><input type="text" value="Tapis"></td>
-                    <td><input type="text" value="15 min"></td>
-                    <td><input type="text" value=""></td>
-                    <td><input type="text" value=""></td>
-                    <td><input type="text" value="6°"></td>
-                    <td class="physicalActivitySettingsDelete">X</td>
-                </tr>
-                <tr>
-                    <td><input type="text" value="Tapis"></td>
-                    <td><input type="text" value="15 min"></td>
-                    <td><input type="text" value=""></td>
-                    <td><input type="text" value=""></td>
-                    <td><input type="text" value="7°"></td>
-                    <td class="physicalActivitySettingsDelete">X</td>
+                    <!-- 
+                    <td><input type="text" value="..."></td>
+                    <td><input type="text" value="..."></td>
+                    <td><input type="text" value="..."></td>
+                    <td><input type="text" value="..."></td>
+                    <td><input type="text" value="..."></td>
+                    <td class="physicalActivitySettingsDelete">X</td> 
+                    -->
                 </tr>
             </tbody>
         </table>
 
 
-        <button class="physicalActivitySettingsBtn">+ Ajouter une tranche</button>
+        <button id="physicalActivitySettingsBtn" class="physicalActivitySettingsBtn">+ Ajouter une tranche</button>
         <hr>
-        <button class="physicalActivitySettingsBtn primary">✅ Sauvegarder nomenclature</button>
+        <button id="physicalActivitySettingsNewBtn">Nouvelle nomenclature</button>
+
+        <button id="physicalActivitySettingsSaveBtn" class="physicalActivitySettingsSaveBtn primary">✅ Sauvegarder nomenclature</button>
 
         <div class="physicalActivitySettingsHistory">
             <p>Nomenclatures historiques</p>

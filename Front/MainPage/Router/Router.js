@@ -1,7 +1,6 @@
 // Router.js
 
 import { setExercicesContentTabSelection } from "../../Modules/Exercices/Exercices.js";
-import { setSettingBehavior } from "../../Modules/Exercices/Settings/Settings.js";
 import { loadUserAccountPage } from "../UserAccount/UserAccount.js";
 import { SetEmailVerifyBehavior } from "../UserAccount/UserEmailVerify/UserEmailVerify.js";
 import { setLoginBehavior } from "../UserAccount/UserLogin/UserLogin.js";
@@ -56,7 +55,6 @@ export async function loadPageContent(path) {
         if (path.startsWith("/exercices")) {            
             setExercicesContentTabSelection();
         }
-
 
         if (path === "/register") {
             SetRegisterBehavior();
