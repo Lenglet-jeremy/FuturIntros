@@ -1,3 +1,195 @@
-<div id="SettingsPhysicalActivity" class="SettingsPhysicalActivity">
-    Paramétrages
+<div id="physicalActivitySettingsContainer" class="physicalActivitySettingsContainer">
+    <div id="physicalActivitySettingsInner" class="physicalActivitySettingsInner">
+        <div class="physicalActivitySettingsHeader">
+            <h2>Type d'exercice</h2>
+            <select id="physicalActivitySettingsExerciseSelector" class="physicalActivitySettingsExerciseSelector">
+                <option value="">-- Choisir un exercice --</option>
+
+                <optgroup label="🏃 Cardio">
+                    <option value="Tapis de course">Tapis de course</option>
+                    <!-- <option value="Vélo d'appartement">Vélo d'appartement</option>
+                    <option value="Vélo elliptique">Vélo elliptique</option>
+                    <option value="Rameur">Rameur</option>
+                    <option value="Step">Step</option>
+                    <option value="Corde à sauter">Corde à sauter</option>
+                    <option value="Montée de genoux">Montée de genoux</option>
+                    <option value="Burpees">Burpees</option>
+                    <option value="SkiErg">SkiErg</option>
+                    <option value="Assault bike">Assault bike</option>
+                    <option value="Box jumps">Box jumps</option> -->
+                </optgroup>
+
+                <!-- <optgroup label="🏋️ Haut du corps - Pectoraux">
+                    <option value="Développé couché">Développé couché</option>
+                    <option value="Développé incliné">Développé incliné</option>
+                    <option value="Développé décliné">Développé décliné</option>
+                    <option value="Écarté couché">Écarté couché</option>
+                    <option value="Pec deck / Butterfly">Pec deck / Butterfly</option>
+                    <option value="Pompes">Pompes</option>
+                    <option value="Pompes inclinées/déclinées">Pompes inclinées/déclinées</option>
+                    <option value="Chest press machine">Chest press machine</option>
+                    <option value="Dips pour pectoraux">Dips pour pectoraux</option>
+                </optgroup> -->
+
+                <!-- <optgroup label="💪 Haut du corps - Dos">
+                    <option value="Tractions">Tractions</option>
+                    <option value="Rowing barre">Rowing barre</option>
+                    <option value="Rowing haltères">Rowing haltères</option>
+                    <option value="Tirage horizontal">Tirage horizontal</option>
+                    <option value="Tirage vertical">Tirage vertical</option>
+                    <option value="Pull-over">Pull-over</option>
+                    <option value="Tirage prise neutre">Tirage prise neutre</option>
+                    <option value="T-Bar Row">T-Bar Row</option>
+                    <option value="Soulevé de terre">Soulevé de terre</option>
+                    <option value="Face pull">Face pull</option>
+                </optgroup> -->
+
+                <!-- <optgroup label="🦾 Haut du corps - Épaules">
+                    <option value="Développé militaire">Développé militaire</option>
+                    <option value="Élévations latérales">Élévations latérales</option>
+                    <option value="Oiseau / Élévations postérieures">Oiseau</option>
+                    <option value="Développé Arnold">Développé Arnold</option>
+                    <option value="Shrugs">Shrugs</option>
+                    <option value="Élévations frontales">Élévations frontales</option>
+                    <option value="Développé épaules machine">Développé épaules machine</option>
+                </optgroup> -->
+
+                <!-- <optgroup label="💪 Bras - Biceps">
+                    <option value="Curl barre">Curl barre</option>
+                    <option value="Curl haltères">Curl haltères</option>
+                    <option value="Curl marteau">Curl marteau</option>
+                    <option value="Curl pupitre">Curl pupitre</option>
+                    <option value="Curl concentré">Curl concentré</option>
+                    <option value="Curl câble">Curl câble</option>
+                    <option value="Curl inversé">Curl inversé</option>
+                </optgroup> -->
+
+                <!-- <optgroup label="💪 Bras - Triceps">
+                    <option value="Barre au front">Barre au front</option>
+                    <option value="Extensions poulie">Extensions poulie</option>
+                    <option value="Kickback">Kickback</option>
+                    <option value="Dips">Dips</option>
+                    <option value="Extensions haltère au-dessus de la tête">Extensions haltère au-dessus de la tête</option>
+                    <option value="Extensions corde poulie">Extensions corde poulie</option>
+                </optgroup> -->
+
+                <!-- <optgroup label="🦵 Bas du corps - Cuisses/Fessiers">
+                    <option value="Squats">Squats</option>
+                    <option value="Fentes">Fentes</option>
+                    <option value="Leg press">Leg press</option>
+                    <option value="Leg extension">Leg extension</option>
+                    <option value="Leg curl">Leg curl</option>
+                    <option value="Hip thrust">Hip thrust</option>
+                    <option value="Soulevé de terre jambes tendues">Soulevé de terre jambes tendues</option>
+                    <option value="Hack squat">Hack squat</option>
+                    <option value="Squat avant">Squat avant</option>
+                    <option value="Abduction/adduction machine">Abduction/adduction machine</option>
+                    <option value="Bulgarian split squat">Bulgarian split squat</option>
+                    <option value="Sumo squat">Sumo squat</option>
+                </optgroup> -->
+
+                <!-- <optgroup label="🦵 Mollets">
+                    <option value="Extension mollets debout">Extension mollets debout</option>
+                    <option value="Extension mollets assis">Extension mollets assis</option>
+                    <option value="Donkey calf raise">Donkey calf raise</option>
+                </optgroup> -->
+
+                <!-- <optgroup label="💥 Abdominaux / Core">
+                    <option value="Crunchs">Crunchs</option>
+                    <option value="Gainage">Gainage</option>
+                    <option value="Relevés de jambes">Relevés de jambes</option>
+                    <option value="Ab wheel">Ab wheel</option>
+                    <option value="Russian twist">Russian twist</option>
+                    <option value="Mountain climbers">Mountain climbers</option>
+                    <option value="Crunch machine">Crunch machine</option>
+                    <option value="Gainage latéral">Gainage latéral</option>
+                    <option value="Cable crunch">Cable crunch</option>
+                    <option value="Toe touches">Toe touches</option>
+                    <option value="Sit-ups">Sit-ups</option>
+                    <option value="V-ups">V-ups</option>
+                    <option value="Plank to push-up">Plank to push-up</option>
+                </optgroup> -->
+
+                <!-- <optgroup label="🔥 Full body / Fonctionnels">
+                    <option value="Burpees">Burpees</option>
+                    <option value="Kettlebell swing">Kettlebell swing</option>
+                    <option value="Snatch">Snatch</option>
+                    <option value="Clean & jerk">Clean & jerk</option>
+                    <option value="Battle rope">Battle rope</option>
+                    <option value="Thrusters">Thrusters</option>
+                    <option value="Wall ball">Wall ball</option>
+                    <option value="Farmer's walk">Farmer's walk</option>
+                    <option value="Box step-ups avec charge">Box step-ups avec charge</option>
+                    <option value="Med ball slam">Med ball slam</option>
+                    <option value="Man maker">Man maker</option>
+                </optgroup> -->
+            </select>
+        </div>
+
+        <div class="physicalActivitySettingsNomenclature">
+            <label for="physicalActivitySettingsNomenclatureName">Nom de la nomenclature</label>
+            <input type="text" id="physicalActivitySettingsNomenclatureName" placeholder="Ex : Programme prise de masse">
+        </div>
+
+        <p>Tranches</p>
+
+        <table id="TablephysicalActivitySettings" class="TablephysicalActivitySettings">
+            <thead>
+                <tr>
+                    <th>Exercice</th>
+                    <th>Durée</th>
+                    <th>Charge</th>
+                    <th>Reps</th>
+                    <th>Inclinaison</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="text" value="Tapis"></td>
+                    <td><input type="text" value="15 min"></td>
+                    <td><input type="text" value=""></td>
+                    <td><input type="text" value=""></td>
+                    <td><input type="text" value="4°"></td>
+                    <td class="physicalActivitySettingsDelete">X</td>
+                </tr>
+                <tr>
+                    <td><input type="text" value="Tapis"></td>
+                    <td><input type="text" value="15 min"></td>
+                    <td><input type="text" value=""></td>
+                    <td><input type="text" value=""></td>
+                    <td><input type="text" value="5°"></td>
+                    <td class="physicalActivitySettingsDelete">X</td>
+                </tr>
+                <tr>
+                    <td><input type="text" value="Tapis"></td>
+                    <td><input type="text" value="15 min"></td>
+                    <td><input type="text" value=""></td>
+                    <td><input type="text" value=""></td>
+                    <td><input type="text" value="6°"></td>
+                    <td class="physicalActivitySettingsDelete">X</td>
+                </tr>
+                <tr>
+                    <td><input type="text" value="Tapis"></td>
+                    <td><input type="text" value="15 min"></td>
+                    <td><input type="text" value=""></td>
+                    <td><input type="text" value=""></td>
+                    <td><input type="text" value="7°"></td>
+                    <td class="physicalActivitySettingsDelete">X</td>
+                </tr>
+            </tbody>
+        </table>
+
+
+        <button class="physicalActivitySettingsBtn">+ Ajouter une tranche</button>
+        <hr>
+        <button class="physicalActivitySettingsBtn primary">✅ Sauvegarder nomenclature</button>
+
+        <div class="physicalActivitySettingsHistory">
+            <p>Nomenclatures historiques</p>
+            <div class="physicalActivitySettingsHistoryItem">Programme de salle</div>
+            <div class="physicalActivitySettingsHistoryItem">Programme de salle</div>
+        </div>
+
+    </div>
 </div>

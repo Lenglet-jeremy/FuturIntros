@@ -1,13 +1,13 @@
 // MainPage.js
 
-import { loadPageContent } from "./Router/Router.js";
+import { loadPageContent } from "/MainPage/Router/Router.js";
 
 
 export async function handleMainPageRoutes(path) {
     const bodyDiv = document.getElementById("BodyContent");
 
     try {
-        const mainRes = await fetch('./MainPage/MainPage.html');
+        const mainRes = await fetch('/MainPage/MainPage.html');
         if (!mainRes.ok) throw new Error("MainPage.html non trouvé");
 
         const mainHtml = await mainRes.text();
@@ -126,4 +126,10 @@ export function handleBurgerMenu() {
     });
   }
 }
+
+
+
+
+
+
 

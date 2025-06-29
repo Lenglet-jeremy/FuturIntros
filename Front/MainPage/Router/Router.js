@@ -1,4 +1,7 @@
+// Router.js
+
 import { setExercicesContentTabSelection } from "../../Modules/Exercices/Exercices.js";
+import { setSettingBehavior } from "../../Modules/Exercices/Settings/Settings.js";
 import { loadUserAccountPage } from "../UserAccount/UserAccount.js";
 import { SetEmailVerifyBehavior } from "../UserAccount/UserEmailVerify/UserEmailVerify.js";
 import { setLoginBehavior } from "../UserAccount/UserLogin/UserLogin.js";
@@ -6,7 +9,12 @@ import { SetRegisterBehavior } from "../UserAccount/UserRegister/UserRegister.js
 
 const routes = {
     '/': './MainPage/Home/Home.html',
-    '/exercices': './Modules/Exercices/Exercices.html',
+
+    '/exercices': '../Modules/Exercices/Exercices.html',
+    '/exercices/settings': '../Modules/Exercices/Settings/Settings.html',
+    '/exercices/entrys': '../Modules/Exercices/Entrys/Entrys.html',
+    '/exercices/handlings': '../Modules/Exercices/Handlings/Handlings.html',
+    
     '/journal': './Modules/Journal/Journal.html',
     '/planning': './Modules/Planning/Planning.html',
     '/login': './MainPage/UserAccount/UserLogin/UserLogin.html',
@@ -16,7 +24,15 @@ const routes = {
 };
 
 export async function loadPageContent(path) {
-    const pageUrl = routes[path] ?? null;
+    let basePath = path;
+
+    // 🔁 Fallback pour les sous-routes comme /exercices/entrys
+    if (path.startsWith('/exercices/')) {
+        basePath = '/exercices';
+    }
+
+    const pageUrl = routes[basePath] ?? null;
+
 
     if (!pageUrl && path === "/") {
         const res = await fetch(routes["/"]);
@@ -37,9 +53,10 @@ export async function loadPageContent(path) {
         const html = await res.text();
         document.querySelector("#MainPageSelectedMenu").innerHTML = html;
 
-        if (path === "/exercices") {
+        if (path.startsWith("/exercices")) {            
             setExercicesContentTabSelection();
         }
+
 
         if (path === "/register") {
             SetRegisterBehavior();
@@ -76,3 +93,10 @@ export async function loadPageContent(path) {
         document.querySelector("#MainPageSelectedMenu").innerHTML = `<p>📛 Page introuvable</p>`;
     }
 }
+
+
+
+
+
+
+

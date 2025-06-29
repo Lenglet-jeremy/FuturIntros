@@ -1,0 +1,127 @@
+@media screen and (max-width: 320px) {
+    
+  .physicalActivitySettingsHeader {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .physicalActivitySettingsExerciseSelector {
+    padding: 6px;
+    background-color: #2a2a2a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+
+  .physicalActivitySettingsNomenclature label {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .physicalActivitySettingsNomenclature input {
+    padding: 8px;
+    width: 100%;
+    background-color: #2a2a2a;
+    color: white;
+    border: none;
+    border-radius: 6px;
+  }
+
+  @media screen and (max-width: 320px) {
+    .physicalActivitySettingsContainer {
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    .physicalActivitySettingsInner {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .physicalActivitySettingsInner h2 {
+      font-size: 16px;
+      margin: 0;
+    }
+
+    #physicalActivitySettingsExerciseSelector,
+    #physicalActivitySettingsNomenclatureName {
+      width: 100%;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    table th,
+    table td {
+      padding: 4px;
+      text-align: left;
+    }
+
+    table input[type="text"] {
+      width: 100%;
+      font-size: 12px;
+      padding: 4px;
+    }
+
+    .physicalActivitySettingsDelete {
+      color: red;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .physicalActivitySettingsBtn {
+      width: 100%;
+      padding: 10px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .physicalActivitySettingsBtn:not(:last-child) {
+      margin-bottom: 10px;
+    }
+
+    .physicalActivitySettingsHistory {
+      margin-top: 20px;
+    }
+
+    .physicalActivitySettingsHistoryItem {
+      background-color: #333;
+      color: white;
+      padding: 8px;
+      margin-bottom: 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+  }
+}
+
+/* Smartphones moyens à grands */
+@media (min-width: 481px) and (max-width: 767px) {
+}
+
+/* Tablettes (portrait) */
+@media (min-width: 768px) and (max-width: 1023px) {
+}
+
+/* Tablettes (paysage) et petits laptops */
+@media (min-width: 1024px) and (max-width: 1279px) {
+}
+
+/* Laptops / écrans moyens */
+@media (min-width: 1280px) and (max-width: 1439px) {
+}
+
+/* Écrans larges / desktops */
+@media (min-width: 1440px) {
+}

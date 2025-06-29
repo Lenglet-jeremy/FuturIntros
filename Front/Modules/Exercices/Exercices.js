@@ -3,39 +3,51 @@ export function setExercicesContentTabSelection() {
     const btns = document.querySelectorAll('.ExercicesContentTabsBar .TabBtn');
     const contentArea = document.getElementById('ExercicesContentData');
 
-    const defaultTab = 'Entrys';
+    // 🔍 Détection de l’onglet dans l’URL
+    const pathParts = window.location.pathname.split('/');
+    const tabFromUrl = pathParts.length === 3 ? pathParts[2].charAt(0).toUpperCase() + pathParts[2].slice(1).toLowerCase() : null;
 
-    // ✅ Sélectionner et charger "Entrys" par défaut
-    if (contentArea && contentArea.innerHTML.trim() === '') {
-        const defaultBtn = document.querySelector(`.TabBtn[data-tab="${defaultTab}"]`);
-        if (defaultBtn) {
-            btns.forEach(b => b.classList.remove('Selected'));
-            defaultBtn.classList.add('Selected');
+    const availableTabs = ['Settings', 'Entrys', 'Handlings'];
+    const selectedTab = availableTabs.includes(tabFromUrl) ? tabFromUrl : 'Entrys';
+    console.log(selectedTab);
 
-            fetch(`Modules/Exercices/${defaultTab}/${defaultTab}.html`)
-                .then(res => {
-                    if (!res.ok) throw new Error("Erreur réseau");
-                    return res.text();
-                })
-                .then(html => {
-                    contentArea.innerHTML = html;
-                })
-                .catch(err => {
-                    console.error(err);
-                    contentArea.innerHTML = "<p>Erreur lors du chargement de l'onglet par défaut.</p>";
-                });
-        }
+    
+
+    const defaultBtn = document.querySelector(`.TabBtn[data-tab="${selectedTab}"]`);
+    if (defaultBtn) {
+        btns.forEach(b => b.classList.remove('Selected'));
+        defaultBtn.classList.add('Selected');
+
+        fetch(`/Modules/Exercices/${selectedTab}/${selectedTab}.html`)
+            .then(res => {
+                if (!res.ok) throw new Error("Erreur réseau");
+                return res.text();
+            })
+            .then(html => {
+                contentArea.innerHTML = html;
+            })
+            .catch(err => {
+                console.error(err);
+                contentArea.innerHTML = "<p>Erreur lors du chargement de l'onglet.</p>";
+            });
     }
 
-    // ✅ Gestion des clics sur les autres onglets
+    // Gestion des clics
     btns.forEach(btn => {
         btn.addEventListener('click', () => {
             const tabName = btn.dataset.tab;
 
+            // 🧠 Mise à jour de l'URL
+            const newUrl = `/exercices/${tabName.toLocaleLowerCase()}`;
+            
+            history.pushState({ tab: tabName }, '', newUrl);
+
+
             btns.forEach(b => b.classList.remove('Selected'));
             btn.classList.add('Selected');
 
-            fetch(`Modules/Exercices/${tabName}/${tabName}.html`)
+            fetch(`/Modules/Exercices/${tabName}/${tabName}.html`)
+                
                 .then(res => {
                     if (!res.ok) throw new Error("Erreur réseau");
                     return res.text();
@@ -50,3 +62,10 @@ export function setExercicesContentTabSelection() {
         });
     });
 }
+
+
+
+
+
+
+
