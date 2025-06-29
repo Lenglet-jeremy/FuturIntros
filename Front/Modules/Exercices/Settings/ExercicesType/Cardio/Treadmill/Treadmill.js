@@ -1,4 +1,53 @@
+// Treadmill.js
+
 let headersSet = false; // Déclarée en dehors des fonctions
+
+const currentUser = {
+  name: "invité",
+  email: "invité"
+};
+
+
+async function fetchCurrentUser() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error("Token non trouvé");
+
+    const response = await fetch("/me", {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error("Réponse non valide de /me");
+    }
+
+    const data = await response.json();
+    if (data.error === "Token invalide") {
+      localStorage.removeItem("token");
+      throw new Error("Token invalide");
+    }
+
+    // Mise à jour du currentUser global
+    currentUser.name = data.name ?? "invité";
+    currentUser.email = data.email ?? "invité";
+
+    const nameEl = document.getElementById("UserAccountName");
+    const emailEl = document.getElementById("UserAccountEmail");
+
+    if (nameEl) nameEl.textContent = currentUser.name;
+    if (emailEl) emailEl.textContent = currentUser.email;
+
+  } catch (err) {
+    console.warn("Utilisateur invité -", err.message);
+  }
+}
+
+
+
+
+
 
 function setHeadersTable() {
     if (headersSet) return;
@@ -27,6 +76,53 @@ function setHeadersTable() {
 
 }
 
+async function saveToMongoDB() {
+  // 🔁 Assure-toi que les infos utilisateur sont à jour AVANT d’envoyer
+  if (currentUser.name === "invité" || currentUser.email === "invité") {
+    await fetchCurrentUser();
+  }
+
+  const exerciseType = document.getElementById("PhysicalActivitySettingsExerciseSelector").value.trim();
+  const nomenclatureName = document.getElementById("physicalActivitySettingsNomenclatureName").value.trim();
+
+  if (!exerciseType || !nomenclatureName) {
+    alert("Veuillez remplir tous les champs.");
+    return;
+  }
+
+  const headers = Array.from(document.querySelectorAll("#TablephysicalActivitySettings thead th"))
+    .map(th => th.textContent.trim());
+
+  const tranches = Array.from(document.querySelectorAll("#TablephysicalActivitySettings tbody tr"))
+    .map(row => Array.from(row.querySelectorAll("input")).map(input => input.value.trim()));
+
+  const payload = {
+    userName: currentUser.name,
+    userEmail: currentUser.email,
+    exerciseType,
+    nomenclatureName,
+    headers,
+    tranches
+  };
+
+  try {
+    const res = await fetch("/api/nomenclatures", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error("Erreur lors de la sauvegarde");
+    renderNomenclatureHistory();
+    resetNomenclatureForm();
+  } catch (err) {
+    console.error(err);
+    alert("Erreur lors de la sauvegarde.");
+  }
+}
+
+
+
 function resetNomenclatureForm() {
     // Vide les champs de saisie
     document.getElementById("physicalActivitySettingsNomenclatureName").value = "";
@@ -46,8 +142,7 @@ function resetNomenclatureForm() {
 
 
 function loadNomenclatureInTable(id) {
-    const history = JSON.parse(sessionStorage.getItem("NomenclatureHistory") || "[]");
-    const nomenclature = history.find(item => item.id === id);
+    const nomenclature = nomenclatureHistory.find(item => item._id === id); // ✅
     if (!nomenclature) return;
 
     // Vide le tableau
@@ -96,43 +191,52 @@ function loadNomenclatureInTable(id) {
     });
 
     // Remplit les champs en haut
-    document.getElementById("physicalActivitySettingsNomenclatureName").value = nomenclature.nomenclatureName;
-    document.getElementById("PhysicalActivitySettingsExerciseSelector").value = nomenclature.exerciseType;
+  document.getElementById("physicalActivitySettingsNomenclatureName").value = nomenclature.nomenclatureName;
+  document.getElementById("PhysicalActivitySettingsExerciseSelector").value = nomenclature.exerciseType;
 }
 
-function renderNomenclatureHistory() {
-    const container = document.querySelector(".physicalActivitySettingsHistory");
-    const history = JSON.parse(sessionStorage.getItem("NomenclatureHistory") || "[]");
+let nomenclatureHistory = []; // en haut du fichier
 
-    // Vide les anciens éléments sauf le titre
-    container.innerHTML = "<p>Nomenclatures historiques</p>";
+async function renderNomenclatureHistory() {
+  const container = document.querySelector(".physicalActivitySettingsHistory");
+  container.innerHTML = "<p>Nomenclatures historiques</p>";
 
-    history.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "physicalActivitySettingsHistoryItem";
-        const nameSpan = document.createElement("span");
-        nameSpan.textContent = item.nomenclatureName + " (" + item.exerciseType + ")";
-        nameSpan.style.cursor = "pointer";
-        nameSpan.onclick = () => loadNomenclatureInTable(item.id);
+  const res = await fetch(`/api/nomenclatures?email=${currentUser.email}`);
+  const history = await res.json();
 
-        div.appendChild(nameSpan);
+  nomenclatureHistory = history; // 🟢 stocker pour usage ultérieur
 
-        const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "X";
-        deleteBtn.style.marginLeft = "10px";
-        deleteBtn.onclick = () => deleteNomenclature(item.id);
+  history.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "physicalActivitySettingsHistoryItem";
 
-        div.appendChild(deleteBtn);
-        container.appendChild(div);
-    });
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = `${item.nomenclatureName} (${item.exerciseType})`;
+    nameSpan.style.cursor = "pointer";
+    nameSpan.onclick = () => loadNomenclatureInTable(item._id); // 🟢 passer l'id
+
+    div.appendChild(nameSpan);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "X";
+    deleteBtn.onclick = () => deleteNomenclature(item._id);
+
+    div.appendChild(deleteBtn);
+    container.appendChild(div);
+  });
 }
 
-function deleteNomenclature(id) {
-    let history = JSON.parse(sessionStorage.getItem("NomenclatureHistory") || "[]");
-    history = history.filter(item => item.id !== id);
-    sessionStorage.setItem("NomenclatureHistory", JSON.stringify(history));
+
+async function deleteNomenclature(id) {
+  try {
+    await fetch(`/api/nomenclatures/${id}`, { method: "DELETE" });
     renderNomenclatureHistory();
+  } catch (err) {
+    console.error(err);
+    alert("Erreur lors de la suppression.");
+  }
 }
+
 
 
 function addLineToBodyTable() {
@@ -165,56 +269,10 @@ function addLineToBodyTable() {
 }
 
 
-function saveToSessionStorage() {
-    const exerciseSelector = document.getElementById("PhysicalActivitySettingsExerciseSelector");
-    const nomenclatureNameInput = document.getElementById("physicalActivitySettingsNomenclatureName");
-
-    const exerciseType = exerciseSelector.value.trim();
-    const nomenclatureName = nomenclatureNameInput.value.trim();
-
-    if (!exerciseType || !nomenclatureName) {
-        alert("Veuillez remplir tous les champs avant de sauvegarder.");
-        return;
-    }
-
-    const headerCells = document.querySelectorAll("#TablephysicalActivitySettings thead th");
-    const headers = Array.from(headerCells).map(th => th.textContent.trim());
-
-    const rows = document.querySelectorAll("#TablephysicalActivitySettings tbody tr");
-    const tranches = [];
-
-    rows.forEach(row => {
-        const inputs = row.querySelectorAll("input");
-        const tranche = Array.from(inputs).map(input => input.value.trim());
-        if (tranche.length > 0 && tranche.some(val => val !== "")) {
-            tranches.push(tranche);
-        }
-    });
-
-    const newNomenclature = {
-        id: Date.now(), // identifiant unique
-        exerciseType,
-        nomenclatureName,
-        headers,
-        tranches
-    };
-
-    let history = JSON.parse(sessionStorage.getItem("NomenclatureHistory") || "[]");
-    history.push(newNomenclature);
-    sessionStorage.setItem("NomenclatureHistory", JSON.stringify(history));
-
-    renderNomenclatureHistory(); // 🔁 Met à jour l'affichage
-    nomenclatureNameInput.value = "";
-    exerciseSelector.value = "";
-    document.querySelector("#TablephysicalActivitySettings tbody").innerHTML = "";
-    headersSet = false;
-    headerCells.forEach(th => th.innerHTML = "");
-}
 
 
-
-
-export function setTreadmillBehavior() {
+export async function setTreadmillBehavior() {
+    await fetchCurrentUser();
     const addSliceButton = document.getElementById("physicalActivitySettingsBtn");
     const exerciseSelector = document.getElementById("PhysicalActivitySettingsExerciseSelector");
 
@@ -237,7 +295,7 @@ export function setTreadmillBehavior() {
 
     const saveNomenclatureButton = document.getElementById("physicalActivitySettingsSaveBtn");
     saveNomenclatureButton.onclick = () => {
-        saveToSessionStorage();
+        saveToMongoDB();
     };
 
     // 🔁 Historique visible au chargement

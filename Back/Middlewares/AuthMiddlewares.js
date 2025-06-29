@@ -1,21 +1,27 @@
+// Middlewares/AuthMiddlewares.js
+
 const jwt = require('jsonwebtoken');
-const User = require('../Models/User.js');
+const User = require('../Models/User');
 
-const authenticate = async (req, res, next) => {
+module.exports = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Token manquant' });
 
-  const token = authHeader.split(' ')[1];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Token manquant ou invalide." });
+  }
+
+  const token = authHeader.split(" ")[1];
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    const user = await User.findById(decoded.id).select("-password");
 
-    req.user = user;
+    if (!user) return res.status(404).json({ error: "Utilisateur introuvable." });
+
+    req.user = user; // ← injecte les infos dans req.user
     next();
   } catch (err) {
-    return res.status(401).json({ error: 'Token invalide' });
+    console.error("Erreur d'authentification :", err);
+    res.status(401).json({ error: "Token invalide." });
   }
 };
-
-module.exports = authenticate;
