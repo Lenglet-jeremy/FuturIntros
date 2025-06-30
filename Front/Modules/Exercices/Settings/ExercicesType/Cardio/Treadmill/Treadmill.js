@@ -9,7 +9,7 @@ const currentUser = {
 
 async function saveToLocaleStorage() {
   if (currentUser.name === "invité" || currentUser.email === "invité") {
-    await fetchCurrentUser(); // ← tente de mettre à jour
+    await fetchCurrentUser();
   }
 
   const exerciseType = document.getElementById("PhysicalActivitySettingsExerciseSelector").value.trim();
@@ -20,52 +20,110 @@ async function saveToLocaleStorage() {
     return;
   }
 
-  const headers = Array.from(document.querySelectorAll("#TablephysicalActivitySettings thead th"))
-    .map(th => th.textContent.trim());
-  const tranches = Array.from(document.querySelectorAll("#TablephysicalActivitySettings tbody tr"))
-    .map(row => Array.from(row.querySelectorAll("input")).map(input => input.value.trim()));
+  // Récupérer les données existantes selon utilisateur (local ou mongo)
+  let existingData = [];
+  if (currentUser.email === "invité") {
+    existingData = JSON.parse(localStorage.getItem("nomenclatures") || "[]");
+  } else {
+    const res = await fetch(`/api/nomenclatures?email=${currentUser.email}`);
+    if (res.ok) {
+      existingData = await res.json();
+    } else {
+      alert("Erreur lors de la récupération des données.");
+      return;
+    }
+  }
 
+  // Chercher si un doublon existe (même nom ET même exerciceType)
+  const duplicateIndex = existingData.findIndex(item =>
+    item.nomenclatureName === nomenclatureName && item.exerciseType === exerciseType
+  );
+
+  // Si doublon trouvé, demander confirmation
+  if (duplicateIndex !== -1) {
+    const confirmed = confirm(`Une nomenclature avec le nom "${nomenclatureName}" pour "${exerciseType}" existe déjà. Voulez-vous l'écraser ?`);
+    if (!confirmed) {
+      return; // Annule la sauvegarde
+    }
+  }
+
+  // Préparer le payload avec un nouvel _id ou garder l'ancien si doublon
   const payload = {
-    _id: Date.now().toString(), // id unique même hors ligne
+    _id: duplicateIndex !== -1 ? existingData[duplicateIndex]._id : Date.now().toString(),
     nomenclatureName,
     exerciseType,
-    headers,
-    tranches
+    headers: Array.from(document.querySelectorAll("#TablephysicalActivitySettings thead th")).map(th => th.textContent.trim()),
+    tranches: Array.from(document.querySelectorAll("#TablephysicalActivitySettings tbody tr"))
+      .map(row => Array.from(row.querySelectorAll("input")).map(input => input.value.trim()))
   };
 
   if (currentUser.email === "invité") {
-    // Sauvegarde dans localStorage
-    const guestData = JSON.parse(localStorage.getItem("nomenclatures") || "[]");
-    guestData.push(payload);
-    localStorage.setItem("nomenclatures", JSON.stringify(guestData));
+    if (duplicateIndex !== -1) {
+      // Remplace la nomenclature existante
+      existingData[duplicateIndex] = payload;
+    } else {
+      existingData.push(payload);
+    }
+    localStorage.setItem("nomenclatures", JSON.stringify(existingData));
   } else {
-    // Sauvegarde en base
     payload.userName = currentUser.name;
     payload.userEmail = currentUser.email;
 
     try {
-      const res = await fetch("/api/nomenclatures", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) throw new Error("Erreur lors de la sauvegarde en base");
+      // Si doublon, mettre à jour (PUT ou PATCH), sinon POST
+      if (duplicateIndex !== -1) {
+        const res = await fetch(`/api/nomenclatures/${payload._id}`, {
+          method: "PUT", // ou PATCH selon API
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error("Erreur lors de la mise à jour en base");
+      } else {
+        const res = await fetch("/api/nomenclatures", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error("Erreur lors de la sauvegarde en base");
+      }
     } catch (err) {
       console.error(err);
       alert("Erreur MongoDB.");
+      return;
     }
   }
 
-  renderNomenclatureHistory();
-  resetNomenclatureForm();
+  // Met à jour l'historique et recharge la nomenclature
+  await renderNomenclatureHistory(exerciseType);
+  loadNomenclatureInTable(payload._id);
+
+  // Surligne visuellement la nomenclature active
+  document.querySelectorAll(".physicalActivitySettingsHistoryItem").forEach(item => item.classList.remove("active"));
+
+  const lastHistoryItem = [...document.querySelectorAll(".physicalActivitySettingsHistoryItem")]
+    .find(item => item.textContent.includes(nomenclatureName) && item.textContent.includes(exerciseType));
+  if (lastHistoryItem) {
+    lastHistoryItem.classList.add("active");
+  }
+
+  console.log("Nomenclature sauvegardée !");
 }
 
+
+
 async function migrateLocalToMongoIfNeeded() {
+
+  // Si le mail utilisateur a été trouvé...
   if (currentUser.email !== "invité") {
+    // Aller cherche les nomenclatures dans le localstorage
     const guestData = JSON.parse(localStorage.getItem("nomenclatures") || "[]");
 
+    // Parcourt les nomenclatures créer
+    // Pour les stocker dans /api/nomenclature 
+    // qui sera utilisé pour stocker sur mongoDB
     for (const payload of guestData) {
+      console.log(payload);
+      
       payload.userName = currentUser.name;
       payload.userEmail = currentUser.email;
 
@@ -80,12 +138,15 @@ async function migrateLocalToMongoIfNeeded() {
   }
 }
 
-async function fetchCurrentUser() {
+export async function fetchCurrentUser() {
 
   try {
+
+    // Recupere le jeton utilisateur
     const token = localStorage.getItem('token');
     if (!token) throw new Error("Token non trouvé");
 
+    // Utilise le jeton pour identifier l'utilisateur
     const response = await fetch("/me", {
       headers: {
         "Authorization": `Bearer ${token}`
@@ -96,19 +157,20 @@ async function fetchCurrentUser() {
       throw new Error("Réponse non valide de /me");
     }
 
+    // Si l'utilisateur n'a pas été trouvé, supprimer le jeton
     const data = await response.json();
     if (data.error === "Token invalide") {
       localStorage.removeItem("token");
       throw new Error("Token invalide");
     }
 
-    // Mise à jour du currentUser global
+    // Recupere le mail et nom utilisateur
     currentUser.name = data.name ?? "invité";
     currentUser.email = data.email ?? "invité";
 
+    // Affiche le mail et nom utilisateur dans le font
     const nameEl = document.getElementById("UserAccountName");
     const emailEl = document.getElementById("UserAccountEmail");
-
     if (nameEl) nameEl.textContent = currentUser.name;
     if (emailEl) emailEl.textContent = currentUser.email;
 
@@ -200,7 +262,6 @@ function resetNomenclatureForm() {
     });
 }
 
-
 function loadNomenclatureInTable(id) {
     const nomenclature = nomenclatureHistory.find(item => item._id === id); // ✅
     if (!nomenclature) return;
@@ -271,16 +332,10 @@ function deleteNomenclature(id) {
   }
 }
 
-async function renderNomenclatureHistory(exerciseType = "") {
+export async function renderNomenclatureHistory(exerciseType = "") {
   const container = document.querySelector(".physicalActivitySettingsHistory");
 
-  if (!exerciseType) {
-    container.style.display = "none";
-    container.innerHTML = "";
-    return;
-  }
-
-  container.style.display = "block"; // ou "" selon ton design
+  container.style.display = "block"; // Toujours visible
   container.innerHTML = "<p>Nomenclatures historiques</p>";
 
   let history = [];
@@ -294,7 +349,10 @@ async function renderNomenclatureHistory(exerciseType = "") {
 
   nomenclatureHistory = history;
 
-  const filteredHistory = history.filter(item => item.exerciseType === exerciseType);
+  // Si exerciseType est vide, on affiche tout
+  const filteredHistory = exerciseType
+    ? history.filter(item => item.exerciseType === exerciseType)
+    : history;
 
   filteredHistory.forEach(item => {
     const div = document.createElement("div");
@@ -320,6 +378,7 @@ async function renderNomenclatureHistory(exerciseType = "") {
     container.appendChild(div);
   });
 }
+
 
 
 

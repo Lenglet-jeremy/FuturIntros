@@ -1,21 +1,25 @@
-import { setTreadmillBehavior } from "./ExercicesType/Cardio/Treadmill/Treadmill.js";
+// Settings.js
 
+import {
+  renderNomenclatureHistory,
+  setTreadmillBehavior,
+  fetchCurrentUser // 👈 on l'importe
+} from "./ExercicesType/Cardio/Treadmill/Treadmill.js";
 
+export async function setSettingBehavior() {
+  await fetchCurrentUser(); // ✅ appel obligatoire avant tout
 
-export function setSettingBehavior() {
-    console.log("gfhjghj");
-    console.log("gfhjghj");
-    console.log("gfhjghj");
-    const exerciceType = document.getElementById("PhysicalActivitySettingsExerciseSelector");
+  renderNomenclatureHistory(""); // 👈 maintenant ça fonctionne au 1er chargement
 
-    exerciceType.addEventListener("change", () => {
-        if (exerciceType.value === "Tapis de course") {
-            setTreadmillBehavior();
-        }
-    });
+  const exerciceType = document.getElementById("PhysicalActivitySettingsExerciseSelector");
 
-    // ✅ Ajout : déclenche immédiat si déjà sélectionné
+  exerciceType.addEventListener("change", () => {
     if (exerciceType.value === "Tapis de course") {
-        setTreadmillBehavior();
+      setTreadmillBehavior();
     }
+  });
+
+  if (exerciceType.value === "Tapis de course") {
+    setTreadmillBehavior();
+  }
 }

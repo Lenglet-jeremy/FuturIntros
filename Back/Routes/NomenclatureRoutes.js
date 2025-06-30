@@ -35,4 +35,29 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+
+// PUT /api/nomenclatures/:id
+router.put('/:id', async (req, res) => {
+  const nomenclatureId = req.params.id;
+  const updatedData = req.body;
+
+  try {
+    // Trouver la nomenclature par son _id et la mettre à jour avec les données reçues
+    const updatedNomenclature = await Nomenclature.findByIdAndUpdate(
+      nomenclatureId,
+      updatedData,
+      { new: true, runValidators: true } // new: renvoie l'objet mis à jour, runValidators: valide les données
+    );
+
+    if (!updatedNomenclature) {
+      return res.status(404).json({ error: 'Nomenclature non trouvée' });
+    }
+
+    res.json(updatedNomenclature);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la mise à jour de la nomenclature' });
+  }
+});
+
 module.exports = router;
