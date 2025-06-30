@@ -1,14 +1,87 @@
 // Treadmill.js
 
 let headersSet = false; // Déclarée en dehors des fonctions
-
+let nomenclatureHistory = []; // en haut du fichier
 const currentUser = {
   name: "invité",
   email: "invité"
 };
 
+async function saveToLocaleStorage() {
+  if (currentUser.name === "invité" || currentUser.email === "invité") {
+    await fetchCurrentUser(); // ← tente de mettre à jour
+  }
+
+  const exerciseType = document.getElementById("PhysicalActivitySettingsExerciseSelector").value.trim();
+  const nomenclatureName = document.getElementById("physicalActivitySettingsNomenclatureName").value.trim();
+
+  if (!exerciseType || !nomenclatureName) {
+    alert("Veuillez remplir tous les champs.");
+    return;
+  }
+
+  const headers = Array.from(document.querySelectorAll("#TablephysicalActivitySettings thead th"))
+    .map(th => th.textContent.trim());
+  const tranches = Array.from(document.querySelectorAll("#TablephysicalActivitySettings tbody tr"))
+    .map(row => Array.from(row.querySelectorAll("input")).map(input => input.value.trim()));
+
+  const payload = {
+    _id: Date.now().toString(), // id unique même hors ligne
+    nomenclatureName,
+    exerciseType,
+    headers,
+    tranches
+  };
+
+  if (currentUser.email === "invité") {
+    // Sauvegarde dans localStorage
+    const guestData = JSON.parse(localStorage.getItem("nomenclatures") || "[]");
+    guestData.push(payload);
+    localStorage.setItem("nomenclatures", JSON.stringify(guestData));
+  } else {
+    // Sauvegarde en base
+    payload.userName = currentUser.name;
+    payload.userEmail = currentUser.email;
+
+    try {
+      const res = await fetch("/api/nomenclatures", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error("Erreur lors de la sauvegarde en base");
+    } catch (err) {
+      console.error(err);
+      alert("Erreur MongoDB.");
+    }
+  }
+
+  renderNomenclatureHistory();
+  resetNomenclatureForm();
+}
+
+async function migrateLocalToMongoIfNeeded() {
+  if (currentUser.email !== "invité") {
+    const guestData = JSON.parse(localStorage.getItem("nomenclatures") || "[]");
+
+    for (const payload of guestData) {
+      payload.userName = currentUser.name;
+      payload.userEmail = currentUser.email;
+
+      await fetch("/api/nomenclatures", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    localStorage.removeItem("nomenclatures");
+  }
+}
 
 async function fetchCurrentUser() {
+
   try {
     const token = localStorage.getItem('token');
     if (!token) throw new Error("Token non trouvé");
@@ -39,14 +112,13 @@ async function fetchCurrentUser() {
     if (nameEl) nameEl.textContent = currentUser.name;
     if (emailEl) emailEl.textContent = currentUser.email;
 
+    await migrateLocalToMongoIfNeeded();
+
+
   } catch (err) {
     console.warn("Utilisateur invité -", err.message);
   }
 }
-
-
-
-
 
 
 function setHeadersTable() {
@@ -76,51 +148,34 @@ function setHeadersTable() {
 
 }
 
-async function saveToMongoDB() {
-  // 🔁 Assure-toi que les infos utilisateur sont à jour AVANT d’envoyer
-  if (currentUser.name === "invité" || currentUser.email === "invité") {
-    await fetchCurrentUser();
-  }
+function addLineToBodyTable() {
+    const Table = document.getElementById("TablephysicalActivitySettings");
+    const Body = Table.querySelector("tbody");
 
-  const exerciseType = document.getElementById("PhysicalActivitySettingsExerciseSelector").value.trim();
-  const nomenclatureName = document.getElementById("physicalActivitySettingsNomenclatureName").value.trim();
+    const NewRow = document.createElement("tr");
 
-  if (!exerciseType || !nomenclatureName) {
-    alert("Veuillez remplir tous les champs.");
-    return;
-  }
+    // Créer et ajouter 3 cellules avec input
+    for (let i = 0; i < 3; i++) {
+        const Td = document.createElement("td");
+        const Input = document.createElement("input");
+        Input.type = "text";
+        Td.appendChild(Input);
+        NewRow.appendChild(Td);
+    }
 
-  const headers = Array.from(document.querySelectorAll("#TablephysicalActivitySettings thead th"))
-    .map(th => th.textContent.trim());
+    // Ajouter un bouton de suppression à la fin de la ligne
+    const deleteTd = document.createElement("td");
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "🗑️";
+    deleteBtn.style.cursor = "pointer";
+    deleteBtn.onclick = () => {
+        NewRow.remove(); // Supprime la ligne
+    };
+    deleteTd.appendChild(deleteBtn);
+    NewRow.appendChild(deleteTd);
 
-  const tranches = Array.from(document.querySelectorAll("#TablephysicalActivitySettings tbody tr"))
-    .map(row => Array.from(row.querySelectorAll("input")).map(input => input.value.trim()));
-
-  const payload = {
-    userName: currentUser.name,
-    userEmail: currentUser.email,
-    exerciseType,
-    nomenclatureName,
-    headers,
-    tranches
-  };
-
-  try {
-    const res = await fetch("/api/nomenclatures", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) throw new Error("Erreur lors de la sauvegarde");
-    renderNomenclatureHistory();
-    resetNomenclatureForm();
-  } catch (err) {
-    console.error(err);
-    alert("Erreur lors de la sauvegarde.");
-  }
+    Body.appendChild(NewRow);
 }
-
 
 
 function resetNomenclatureForm() {
@@ -138,6 +193,11 @@ function resetNomenclatureForm() {
     const thead = document.querySelector("#TablephysicalActivitySettings thead tr");
     thead.innerHTML = "";
     headersSet = false;
+
+    // 🔄 Deselect de l'item actif dans l'historique
+    document.querySelectorAll(".physicalActivitySettingsHistoryItem").forEach(item => {
+        item.classList.remove("active");
+    });
 }
 
 
@@ -195,77 +255,70 @@ function loadNomenclatureInTable(id) {
   document.getElementById("PhysicalActivitySettingsExerciseSelector").value = nomenclature.exerciseType;
 }
 
-let nomenclatureHistory = []; // en haut du fichier
+function deleteNomenclature(id) {
+  if (currentUser.email === "invité") {
+    const guestData = JSON.parse(localStorage.getItem("nomenclatures") || "[]");
+    const filtered = guestData.filter(item => item._id !== id);
+    localStorage.setItem("nomenclatures", JSON.stringify(filtered));
+    renderNomenclatureHistory();
+  } else {
+    fetch(`/api/nomenclatures/${id}`, { method: "DELETE" })
+      .then(() => renderNomenclatureHistory())
+      .catch(err => {
+        console.error(err);
+        alert("Erreur lors de la suppression.");
+      });
+  }
+}
 
-async function renderNomenclatureHistory() {
+async function renderNomenclatureHistory(exerciseType = "") {
   const container = document.querySelector(".physicalActivitySettingsHistory");
+
+  if (!exerciseType) {
+    container.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+
+  container.style.display = "block"; // ou "" selon ton design
   container.innerHTML = "<p>Nomenclatures historiques</p>";
 
-  const res = await fetch(`/api/nomenclatures?email=${currentUser.email}`);
-  const history = await res.json();
+  let history = [];
 
-  nomenclatureHistory = history; // 🟢 stocker pour usage ultérieur
+  if (currentUser.email === "invité") {
+    history = JSON.parse(localStorage.getItem("nomenclatures") || "[]");
+  } else {
+    const res = await fetch(`/api/nomenclatures?email=${currentUser.email}`);
+    history = await res.json();
+  }
 
-  history.forEach(item => {
+  nomenclatureHistory = history;
+
+  const filteredHistory = history.filter(item => item.exerciseType === exerciseType);
+
+  filteredHistory.forEach(item => {
     const div = document.createElement("div");
     div.className = "physicalActivitySettingsHistoryItem";
 
     const nameSpan = document.createElement("span");
     nameSpan.textContent = `${item.nomenclatureName} (${item.exerciseType})`;
     nameSpan.style.cursor = "pointer";
-    nameSpan.onclick = () => loadNomenclatureInTable(item._id); // 🟢 passer l'id
-
-    div.appendChild(nameSpan);
+    nameSpan.onclick = () => {
+      document.querySelectorAll(".physicalActivitySettingsHistoryItem").forEach(item => {
+        item.classList.remove("active");
+      });
+      div.classList.add("active");
+      loadNomenclatureInTable(item._id);
+    };
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "X";
     deleteBtn.onclick = () => deleteNomenclature(item._id);
 
+    div.appendChild(nameSpan);
     div.appendChild(deleteBtn);
     container.appendChild(div);
   });
-}
-
-
-async function deleteNomenclature(id) {
-  try {
-    await fetch(`/api/nomenclatures/${id}`, { method: "DELETE" });
-    renderNomenclatureHistory();
-  } catch (err) {
-    console.error(err);
-    alert("Erreur lors de la suppression.");
-  }
-}
-
-
-
-function addLineToBodyTable() {
-    const Table = document.getElementById("TablephysicalActivitySettings");
-    const Body = Table.querySelector("tbody");
-
-    const NewRow = document.createElement("tr");
-
-    // Créer et ajouter 3 cellules avec input
-    for (let i = 0; i < 3; i++) {
-        const Td = document.createElement("td");
-        const Input = document.createElement("input");
-        Input.type = "text";
-        Td.appendChild(Input);
-        NewRow.appendChild(Td);
-    }
-
-    // Ajouter un bouton de suppression à la fin de la ligne
-    const deleteTd = document.createElement("td");
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "🗑️";
-    deleteBtn.style.cursor = "pointer";
-    deleteBtn.onclick = () => {
-        NewRow.remove(); // Supprime la ligne
-    };
-    deleteTd.appendChild(deleteBtn);
-    NewRow.appendChild(deleteTd);
-
-    Body.appendChild(NewRow);
 }
 
 
@@ -278,26 +331,39 @@ export async function setTreadmillBehavior() {
 
     const newNomenclatureButton = document.getElementById("physicalActivitySettingsNewBtn");
     newNomenclatureButton.onclick = () => {
-        resetNomenclatureForm();
+      resetNomenclatureForm();
+      const selectedExercise = exerciseSelector.value.trim();
+      renderNomenclatureHistory(selectedExercise);
     };
 
 
-    addSliceButton.onclick = () => {
-        const selectedExercise = exerciseSelector.value.trim();
-        if (!selectedExercise) {
-            alert("Veuillez d'abord sélectionner un type d'exercice.");
-            return;
-        }
 
-        setHeadersTable();
-        addLineToBodyTable();
+    addSliceButton.onclick = () => {
+      const selectedExercise = exerciseSelector.value.trim();
+      renderNomenclatureHistory(selectedExercise);
+
+
+      if (!selectedExercise) {
+        alert("Veuillez d'abord sélectionner un type d'exercice.");
+        return;
+      }
+
+      setHeadersTable();
+      addLineToBodyTable();
     };
 
     const saveNomenclatureButton = document.getElementById("physicalActivitySettingsSaveBtn");
     saveNomenclatureButton.onclick = () => {
-        saveToMongoDB();
+        saveToLocaleStorage();
     };
 
-    // 🔁 Historique visible au chargement
-    renderNomenclatureHistory();
+    exerciseSelector.onchange = () => {
+      const selectedExercise = exerciseSelector.value.trim();
+      renderNomenclatureHistory(selectedExercise);
+    };
+
+
+    const selectedExercise = exerciseSelector.value.trim();
+    renderNomenclatureHistory(selectedExercise);
+
 }

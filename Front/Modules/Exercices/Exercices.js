@@ -29,7 +29,7 @@ export function setExercicesContentTabSelection() {
             .then(html => {
                 contentArea.innerHTML = html;
                 
-                if (tabFromUrl === "Settings") {
+                if (selectedTab  === "Settings") {
                     console.log("dfg");
                     console.log("dfg");
                     console.log("dfg");
@@ -51,31 +51,34 @@ export function setExercicesContentTabSelection() {
     // Gestion des clics
     btns.forEach(btn => {
         btn.addEventListener('click', () => {
-            const tabName = btn.dataset.tab;
+        const tabName = btn.dataset.tab;
 
-            // 🧠 Mise à jour de l'URL
-            const newUrl = `/exercices/${tabName.toLocaleLowerCase()}`;
-            
-            history.pushState({ tab: tabName }, '', newUrl);
+        // 🧠 Mise à jour de l'URL
+        const newUrl = `/exercices/${tabName.toLowerCase()}`;
+        history.pushState({ tab: tabName }, '', newUrl);
 
+        btns.forEach(b => b.classList.remove('Selected'));
+        btn.classList.add('Selected');
 
-            btns.forEach(b => b.classList.remove('Selected'));
-            btn.classList.add('Selected');
+        fetch(`/Modules/Exercices/${tabName}/${tabName}.html`)
+            .then(res => {
+                if (!res.ok) throw new Error("Erreur réseau");
+                return res.text();
+            })
+            .then(html => {
+                contentArea.innerHTML = html;
 
-            fetch(`/Modules/Exercices/${tabName}/${tabName}.html`)
-                
-                .then(res => {
-                    if (!res.ok) throw new Error("Erreur réseau");
-                    return res.text();
-                })
-                .then(html => {
-                    contentArea.innerHTML = html;
-                })
-                .catch(err => {
-                    console.error(err);
-                    contentArea.innerHTML = "<p>Erreur lors du chargement de l'onglet.</p>";
-                });
-        });
+                // 👇 Appelle setSettingBehavior si c'est l'onglet Settings
+                if (tabName === "Settings") {
+                    setSettingBehavior();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                contentArea.innerHTML = "<p>Erreur lors du chargement de l'onglet.</p>";
+            });
+    });
+
     });
 }
 

@@ -1,3 +1,6 @@
+/* Settings.css */
+
+
 @media screen and (max-width: 320px) {
     
   .physicalActivitySettingsHeader {
@@ -93,6 +96,7 @@
 
     .physicalActivitySettingsHistory {
       margin-top: 20px;
+      display: none;
     }
 
     .physicalActivitySettingsHistoryItem {
@@ -103,6 +107,11 @@
       border-radius: 4px;
       font-size: 13px;
     }
+    .physicalActivitySettingsHistoryItem.active {
+      background-color: #eef;
+      font-weight: bold;
+    }
+
   }
 }
 
